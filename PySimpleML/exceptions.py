@@ -1,0 +1,4 @@
+
+class HyperParameterError(Exception):
+    pass
+
