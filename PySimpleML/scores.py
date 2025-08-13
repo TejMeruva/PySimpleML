@@ -71,6 +71,8 @@ def recallScore(y, target):
     return pd.Series(op)
 
 def accuracyScore(y, target):
+    y = y.to_numpy().reshape(-1)
+    target = target.to_numpy().reshape(-1)
     return (y == target).sum()/y.shape[0]
 
 def precisionScore(y, target):
@@ -86,7 +88,9 @@ def precisionScore(y, target):
     return pd.Series(op)
 
 def f1Score(y, target):
-    return 2 * (precisionScore(y, target) * recallScore(y, target)) / (precisionScore(y, target) + recallScore(y, target)) if (precisionScore(y, target) + recallScore(y, target)).sum() != 0 else pd.Series({k: 0 for k in _mapping(y, target)})
+    prec = precisionScore(y, target)
+    rec = recallScore(y, target)
+    return 2 * (prec * rec) / (prec + rec) 
 
 def RSMEScore(y, target):
     y = y.to_numpy()

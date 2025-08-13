@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import numbers
 
 def normalizeDF(df: pd.DataFrame, mean=-1, std=1)-> pd.DataFrame:
     if not isinstance(mean, pd.Series): mean = df.mean()
@@ -24,3 +25,12 @@ def euclidDist(a: np.ndarray, b:np.ndarray):
     deltaSq = (a-b)**2
     dist = (deltaSq.sum())**0.5
     return dist
+
+def isNum(x) -> bool:
+    return isinstance(x, numbers.Number)
+
+def valueCounts(a:np.ndarray) -> np.ndarray:
+    unique = np.unique(a)
+    count = lambda x: (a==x).sum()
+    count = np.vectorize(count)
+    return unique, count(unique)
