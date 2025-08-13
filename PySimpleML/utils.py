@@ -30,7 +30,9 @@ def isNum(x) -> bool:
     return isinstance(x, numbers.Number)
 
 def valueCounts(a:np.ndarray) -> np.ndarray:
-    unique = np.unique(a)
+    a = np.array(a, dtype=object)
+    unique = np.unique(a.astype(object))
+    unique = np.array(unique, dtype=object)  # Ensure no truncation
     count = lambda x: (a==x).sum()
-    count = np.vectorize(count)
+    count = np.vectorize(count, otypes=[int])
     return unique, count(unique)

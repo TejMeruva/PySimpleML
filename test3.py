@@ -1,7 +1,7 @@
-from PySimpleML.models.DTModel import _Question, _giniScore, _split, _infoGain, _bestQuestion, DecisionTree
+from PySimpleML.models.DT import _Question, _giniScore, _split, _infoGain, _bestQuestion, DecisionTree
 import pandas as pd
 import numpy as np
-from PySimpleML.models.DT import infoGain, Question, bestQuestion
+# from PySimpleML.models.DT import infoGain, Question, bestQuestion
 from PySimpleML.scores import accuracyScore, f1Score
 
 data = {

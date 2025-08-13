@@ -142,8 +142,8 @@ class NeuralNetwork:
                 self.ycolumns = list(y.columns)
                 self.xcolumns = list(X.columns)
             case 1:
+                self.labels = list(y.iloc[:, -1].unique())
                 y = pd.get_dummies(y, dtype=np.float16)
-                self.labels = list(y.columns)
                 self.ycolumns = list(y.columns)
                 self.xcolumns = list(X.columns)
 

@@ -1,11 +1,11 @@
 
 from PySimpleML.scores import f1Score, precisionScore, accuracyScore
 import pandas as pd
-from PySimpleML.models.DT import DecisionTree as DT1
-from PySimpleML.models.DTModel import DecisionTree as DT2
+# from PySimpleML.models.DT import DecisionTree as DT1
+from PySimpleML.models.DT import DecisionTree as DT2
 
 data = pd.read_excel('/Users/msreeramulu/SWD/Python/PySimpleML/ClassData.xlsx')
-dataShuff = data.rename(columns={'Species':'Label'}).reset_index(drop=True)
+dataShuff = data.sample(frac=1).rename(columns={'Species':'Label'}).reset_index(drop=True)
 # dataShuff.drop(['Id'], inplace=True)
 trainData = dataShuff.iloc[:140, :]
 testData = dataShuff.iloc[140:, :]

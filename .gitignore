@@ -2,6 +2,7 @@
 #Virtual environment directories
 venv/
 __pycache__/
+models/__pycache__/
 *.pyc
 
 # IDE/OS files

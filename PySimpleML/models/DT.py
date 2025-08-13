@@ -1,65 +1,72 @@
 import pandas as pd
+import numpy as np 
+from ..utils import isNum, valueCounts
 
-def isNum(x) -> bool:
-    return isinstance(x, int) or isinstance(x, float)
-
-class Question:
-    def __init__(self, column, value):
-        self.column = column
+class _Question:
+    def __init__(self, serInd, value, cols:np.ndarray):
+        self.serInd = serInd
         self.value = value
-    def test(self, inp):
-        if isNum(inp):
-            return inp >= self.value
+        self.cols = cols
+
+    def test(self, value:np.ndarray):
+        # print(isNum(value)),
+    
+        isNumVect = np.vectorize(isNum, otypes=[bool])
+        if isNumVect(value).sum() == value.size:
+            return (value >= self.value)
         else:
-            return inp == self.value
+            return (value == self.value)
     def __str__(self):
         if isNum(self.value):
-            return f'is {self.column} >= {self.value}?'
+            return f'is {self.cols[self.serInd]} >= {self.value}?'
         else:
-            return f'is {self.column} == {self.value}?'
+            return f'is {self.cols[self.serInd]} == {self.value}?'
+        
+# def _giniScore(vals):
+#     vals = list(vals)
+#     unique = list(set(vals))
+#     score = 1
+#     for val in unique:
+#         score -= (vals.count(val)/len(vals))**2
+#     return score
 
-def giniScore(vals):
-    vals = list(vals)
-    unique = list(set(vals))
-    score = 1
-    for val in unique:
-        score -= (vals.count(val)/len(vals))**2
-    return score
+def _giniScore(y: np.ndarray):
+    _, counts = np.unique(y, return_counts=True)
+    probs = counts / counts.sum()
+    return 1 - np.sum(probs ** 2)
 
-def split(data, q: Question):
-    trueInds = []
-    falseInds = []
-    for ind, row in data.iterrows():
-        # try:
-        if q.test(row[q.column]):
-            trueInds.append(ind)
-        else:
-            falseInds.append(ind)
-        # except:
-            
-    trueData = data.loc[trueInds, :].reset_index(drop=True)
-    falseData = data.loc[falseInds, :].reset_index(drop=True)
-    return trueData, falseData
+def _split(data:np.ndarray, question:_Question):
+    ser = data[:, [question.serInd]].reshape(-1)
+    mask = question.test(ser)
+    return data[mask, :], data[~mask, :]
 
-def infoGain(data, q):
-    trueData, falseData = split(data, q)
-    wmean = (trueData.shape[0] * giniScore(trueData['Label'])+ falseData.shape[0] * giniScore(falseData['Label']))/data.shape[0]
-    return giniScore(data['Label']) - wmean
+def _splitInds(data:np.ndarray, question:_Question):
+    ser = data[:, [question.serInd]].reshape(-1)
+    mask = question.test(ser)
+    return mask, ~mask
 
-def bestQuestion(data):
-    infos = []
-    qs = []
-    columns = list(data.columns)
-    columns.remove('Label')
-    if len(columns) == 0: return -1
-    for col in columns:
-        for ind in data.index:
-            q = Question(col, data.loc[ind, col])
-            infos.append(infoGain(data, q))
-            qs.append(q)
-    ind = infos.index(max(infos))
-    # print(max(infos))
-    return qs[ind]
+def _infoGain(data:np.ndarray, question:_Question):
+    score = _giniScore(data[:, [-1]])
+    trueData, falseData = _split(data, question)
+    wmean = (trueData[:, -1].size * _giniScore(trueData[:, -1]) + falseData[:, -1].size * _giniScore(falseData[:, -1]))/(trueData[:, -1].size + falseData[:, -1].size)
+    return score - wmean
+
+def _bestQuestion(data:np.ndarray, cols:np.ndarray):
+    X = data[:, :-1]
+    y = data[:, [-1]]
+    bestInfo = -1
+    bestQ = None
+    for colInd in range(X.shape[1]):
+        for val in np.unique(X[:, colInd]).reshape(-1):
+            ques = _Question(colInd, val, cols)
+            info = _infoGain(data, ques)
+            if info > bestInfo:
+                bestInfo  = info
+                # print(bestInfo)
+                bestQ = ques
+                # print(bestQ)
+    # print(bestInfo)
+    return bestQ
 
 class DecisionNode:
     def __init__(self, question, trueNext, falseNext):
@@ -69,51 +76,97 @@ class DecisionNode:
 
     def __str__(self):
         return str(self.question)
-
+    
 class Leaf:
-    def __init__(self, data, mode):
-        self.freq = data['Label'].value_counts().reset_index()
-        self.data = data
-        self.mode = mode
+    def __init__(self, y:np.ndarray, task):
+        self.labels, self.counts= valueCounts(y.astype(object))
+        self.y = y
+        self.task = task
     def __str__(self):
 
-        match self.mode:
+        match self.task:
             case 0:
-                return str(self.data['Label'].mean())
+                return self.y.mean()
             case 1:
-                return self.freq.loc[0, 'Label']
+                return self.labels[np.argmax(self.counts)] if self.counts.size != 0 else 'None'
             case _:
                 pass
-        
 
 class DecisionTree:
-    def __init__(self, data=pd.DataFrame([]), mode=0, rootNode=None):
+    def __init__(self, task=0, rootNode=None):
         if rootNode == None:
-            self.rootNode = self.buildTree(data, mode)
+            self.task = task
         else:
             self.rootNode = rootNode
-        self.mode = mode
 
-    def buildTree(self, data, mode):
-        q = bestQuestion(data)
-        info = infoGain(data, q)
-        if info == 0: return Leaf(data, mode)
-        trueData, falseData = split(data, q)
-        trueBranch = self.buildTree(trueData, mode)
-        falseBranch = self.buildTree(falseData, mode)
+    def train(self, X:pd.DataFrame, y:pd.DataFrame):
+        tdata = pd.concat([X, y], axis=1).to_numpy()
+        # print(tdata)
+        # print(tdata)
+        cols = np.array(X.columns)
+        self.rootNode = self._buildTree(tdata, self.task, cols)
+
+    def _buildTree(self, data:np.ndarray, task, cols:np.ndarray):
+        q = _bestQuestion(data[:, :-1], cols)
+        info = _infoGain(data, q)
+        if info == 0: return Leaf(data[:, -1], task)
+        trueData, falseData = _split(data, q)
+        # print(q)
+        # print('gay')
+        # print(trueData)
+        trueBranch = self._buildTree(trueData, task, cols)
+        falseBranch = self._buildTree(falseData, task, cols)
         return DecisionNode(q, trueBranch, falseBranch)
     
-    def predict(self, inp):
-        op = []
-        for ind, row in inp.iterrows():
-            node = self.rootNode
-            while not isinstance(node, Leaf):
-                if node.question.test(row[node.question.column]):
-                    node = node.trueNext
-                else:
-                    node = node.falseNext
-            op.append(str(node))
-        return op
+    def predictNP(self, inpNP:np.ndarray):
+        inds = np.arange(0, inpNP.shape[0], 1).reshape(-1, 1)
+        inpNPInded = np.hstack([inpNP, inds])
+        op = self._op(inpNPInded, self.rootNode)
+        return op[op[:, -1].argsort(), :-1]
+
+    def predict(self, inp:pd.DataFrame):
+        inpNP = inp.to_numpy()
+        inds = np.arange(0, inpNP.shape[0], 1).reshape(-1, 1)
+        inpNPInded = np.hstack([inpNP, inds])
+        op = self._op(inpNPInded, self.rootNode)
+        return pd.Series(op[op[:, -1].argsort(), :-1].reshape(-1))
+    def _op(self, inp: np.ndarray, node: DecisionNode):
+        # if inds == None: inds = np.arange(0, inp.shape[0]).reshape(-1, 1)
+        # inpInded = np.hstack([inds, inp])
+        if isinstance(node, Leaf): return np.full((inp.shape[0], 1), str(node))
+        trueData, falseData = _split(inp, node.question)
+        if isinstance(node.trueNext, Leaf) and isinstance(node.falseNext, Leaf):
+            trueInds = trueData[:, [-1]]
+            falseInds = falseData[:, [-1]]
+            return np.vstack([
+                np.hstack([np.full_like(trueInds, str(node.trueNext), dtype=object), trueInds]),
+                np.hstack([np.full_like(falseInds, str(node.falseNext), dtype=object), falseInds])
+            ])
+        if isinstance(node.trueNext, Leaf) and not isinstance(node.falseNext, Leaf):
+            trueInds = trueData[:, [-1]]
+            falseInds = falseData[:, [-1]]
+            return np.vstack([
+                np.hstack([np.full_like(trueInds, str(node.trueNext), dtype=object), trueInds]),
+                self._op(falseData, node.falseNext)
+            ])
+        if not isinstance(node.trueNext, Leaf) and isinstance(node.falseNext, Leaf):
+            trueInds = trueData[:, [-1]]
+            falseInds = falseData[:, [-1]]
+            return np.vstack([
+                self._op(trueData, node.trueNext),
+                np.hstack([np.full_like(falseInds, str(node.falseNext), dtype=object), falseInds])
+            ])
+        if not isinstance(node.trueNext, Leaf) and not isinstance(node.falseNext, Leaf):
+            trueInds = trueData[:, [-1]]
+            falseInds = falseData[:, [-1]]
+            return np.vstack([
+                self._op(trueData, node.trueNext),
+                self._op(falseData, node.falseNext)
+            ])
+
+
+    def _leafToNP(self, X):
+        return
 
     def fn(self, node, ind=0):
         s = ''
@@ -130,4 +183,8 @@ class DecisionTree:
             s+= self.fn(node.falseNext, ind+1)
         return s
     def __str__(self):
-        return self.fn(self.rootNode)
+        return self.fn(self.rootNode) if not isinstance(self.rootNode, Leaf) else str(self.rootNode)
+
+
+
+
