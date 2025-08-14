@@ -221,7 +221,7 @@ class NeuralNetwork:
             self.layers[ind].weights = np.array(d[f'W{ind}'])
             self.layers[ind].biases = np.array(d[f'B{ind}'])
     
-    def predict(self, inp: pd.DataFrame) -> np.ndarray:
+    def predict(self, inp: pd.DataFrame, withConfidences=False) -> np.ndarray:
         """
         Returns the predicted output.
         Parameters:
@@ -252,5 +252,9 @@ class NeuralNetwork:
                     opLayer = self.fwPass(inp[:, [ind]])
                     labels.append(self.labels[opLayer.argmax()])
                     confidences.append(opLayer.max())
-                op = pd.DataFrame({'Label': labels, 'Confidence': confidences})
+                if withConfidences :
+                    op = pd.DataFrame({'Label': labels, 'Confidence': confidences})
+                else:
+                    op = pd.DataFrame({'Label': labels})
+                
                 return op

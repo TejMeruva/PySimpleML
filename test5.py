@@ -20,5 +20,4 @@ print()
 nn = NeuralNetwork(10, 10, task=1)
 nn.train(X, y, 0.1, 10)
 pred = nn.predict(X)
-pred = pred['Label']
 print(f1Score(pred, y))
