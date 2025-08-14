@@ -1,4 +1,5 @@
 
-class HyperParameterError(Exception):
+class MLError(Exception):
     pass
+
 
