@@ -8,7 +8,7 @@ This package gives the user the ability to train models from data in the form of
 - Random Forest
 
 #### Background
-**I am a noob.** So this is code is not the cleanest in the world by any means. This is just me getting my hands dirty. This package however, _is_ very handy to train a model in a jiffy in two lines of code. 
+**I am a newbie.** So this is code is not the cleanest in the world by any means. This is just me getting my hands dirty. This package however, _is_ very handy to train a model in a jiffy in two lines of code. 
 
 I'd love to hear any suggestions or corrections.
 
