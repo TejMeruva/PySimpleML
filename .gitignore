@@ -3,6 +3,7 @@
 venv/
 __pycache__/
 models/__pycache__/
+Examples/ANN/__pycache__/
 *.pyc
 
 # IDE/OS files

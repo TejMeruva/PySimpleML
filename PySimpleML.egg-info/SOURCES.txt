@@ -1,0 +1,12 @@
+LICENSE
+README.md
+setup.py
+PySimpleML/__init__.py
+PySimpleML/exceptions.py
+PySimpleML/scores.py
+PySimpleML/utils.py
+PySimpleML.egg-info/PKG-INFO
+PySimpleML.egg-info/SOURCES.txt
+PySimpleML.egg-info/dependency_links.txt
+PySimpleML.egg-info/requires.txt
+PySimpleML.egg-info/top_level.txt

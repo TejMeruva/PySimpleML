@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 from ..utils import normalizeNP, deNormalizeNP, euclidDist
 import json
-from ..exceptions import HyperParameterError
 
 class KNNModel:
     def __init__(self, k=0):

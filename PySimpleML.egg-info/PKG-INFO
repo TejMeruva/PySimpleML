@@ -1,0 +1,25 @@
+Metadata-Version: 2.4
+Name: PySimpleML
+Version: 1.0.0
+Summary: A simple Machine Learning built from scratch.
+Home-page: https://github.com/TejMeruva/PySimpleML.git
+Author: Teja Narasimha Rao
+Author-email: meruvateja123@gmail.com
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Requires-Python: >=3.8
+Description-Content-Type: text/Markdown
+License-File: LICENSE
+Requires-Dist: numpy>=1.20.0
+Requires-Dist: pandas>=1.3.0
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description-content-type
+Dynamic: home-page
+Dynamic: license-file
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary

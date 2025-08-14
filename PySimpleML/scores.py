@@ -1,23 +1,22 @@
 import pandas as pd
 import numpy as np
 
-def _mapping(y:pd.Series, target:pd.Series):
-    ynp = y.to_numpy().reshape(-1, 1)
-    targetnp = target.to_numpy().reshape(-1, 1)
-    ytar = np.concatenate((ynp, targetnp), axis=1)
-    mapping = {v:k for k, v in dict(enumerate(np.unique(ytar))).items()}
+def _mapping(y: pd.Series, target: pd.Series):
+    if not isinstance(target, pd.Series) or not isinstance(y, pd.Series): raise ValueError('`target` and `y` arguments should be a Pandas Series')
+    unique = np.unique(np.concatenate([y.unique(), target.unique()]))
+    mapping = {v:k for k, v in dict(enumerate(unique)).items()}
     return mapping
 
-def confusionMatrix(y:pd.Series, target:pd.Series):
-    ynp = y.to_numpy()
-    targetnp = target.to_numpy()
-    ytar = np.column_stack((y, target))
+def confusionMatrix(y: pd.Series, target: pd.Series):
+    ynp = y.to_numpy().reshape(-1, 1)
+    targetnp = target.to_numpy().reshape(-1, 1)
+    ytar = np.hstack([ynp, targetnp])
     mapping = _mapping(y, target)
     cm = np.zeros((len(mapping), len(mapping)), dtype=int)
-    def map(x):
+    def mapThis(x):
         return mapping[x]
-    map = np.vectorize(map)
-    ytar = map(ytar)
+    mapThis = np.vectorize(mapThis)
+    ytar = mapThis(ytar)
     def update(col):
         cm[col[0], col[1]] += 1
         return 0
@@ -90,7 +89,10 @@ def precisionScore(y, target):
 def f1Score(y, target):
     prec = precisionScore(y, target)
     rec = recallScore(y, target)
-    return 2 * (prec * rec) / (prec + rec) 
+    denom = prec + rec
+    f1 = 2 * (prec * rec) / denom
+    f1[denom == 0] = 0.0  # Avoid NaN when both are zero
+    return f1 
 
 def RSMEScore(y, target):
     y = y.to_numpy()
