@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np 
 from ..utils import isNum, valueCounts
+from .BaseModel import MLModel
 
 class _Question:
     def __init__(self, serInd, value, cols:np.ndarray):
@@ -92,14 +93,14 @@ class Leaf:
             case _:
                 pass
 
-class DecisionTree:
+class DecisionTree(MLModel):
     def __init__(self, task=0, rootNode=None):
         if rootNode == None:
             self.task = task
         else:
             self.rootNode = rootNode
 
-    def train(self, X:pd.DataFrame, y:pd.DataFrame):
+    def _train(self, X:pd.DataFrame, y:pd.DataFrame):
         tdata = pd.concat([X, y], axis=1).to_numpy()
         # print(tdata)
         # print(tdata)
@@ -124,8 +125,11 @@ class DecisionTree:
         op = self._op(inpNPInded, self.rootNode)
         return op[op[:, -1].argsort(), :-1]
 
-    def predict(self, inp:pd.DataFrame):
-        inpNP = inp.to_numpy()
+    def _predict(self, inp:pd.DataFrame | np.ndarray):
+        if isinstance(inp, pd.DataFrame) : 
+            inpNP = inp.to_numpy()
+        else:
+            inpNP = inp
         inds = np.arange(0, inpNP.shape[0], 1).reshape(-1, 1)
         inpNPInded = np.hstack([inpNP, inds])
         op = self._op(inpNPInded, self.rootNode)

@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from PySimpleML.models.DT import _Question, _bestQuestion, _infoGain, Leaf, _split, DecisionNode, DecisionTree
 from ..utils import valueCounts
+from .BaseModel import MLModel
 
 def _bootstrap(data:np.ndarray):
     inds = np.random.randint(0, data.shape[0], size=data.shape[0])
@@ -14,7 +15,7 @@ def _randBestQuestion(data:np.ndarray, nvar: int, cols: np.ndarray, indsIncl:np.
     inds = np.sort(np.random.choice(inds, lessOrEqual(nvar), replace=False))
     subData = data[:, np.append(inds, data.shape[1]-1).astype(int)]
     return _bestQuestion(subData, cols[inds.astype(int)])
-class RandomForest:
+class RandomForest(MLModel):
     def __init__(self, ntrees, nvar, task):
         self.ntrees = ntrees
         self.nvar = nvar
@@ -32,7 +33,7 @@ class RandomForest:
         falseBranch = self._buildTree(falseData, cols, inds)
         return DecisionNode(q, trueBranch, falseBranch)
     
-    def train(self, X:pd.DataFrame, y:pd.DataFrame):
+    def _train(self, X:pd.DataFrame, y:pd.DataFrame):
         cols = np.array(X.columns)
         X = X.to_numpy()
         y = y.to_numpy()
@@ -44,7 +45,7 @@ class RandomForest:
             trees.append(tree) 
         self.trees = trees
 
-    def predict(self, X:pd.DataFrame):
+    def _predict(self, X:pd.DataFrame):
         
         ops = pd.concat([tree.predict(X) for tree in self.trees], axis=1)
         match self.task:

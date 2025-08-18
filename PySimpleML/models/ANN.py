@@ -2,6 +2,7 @@ import numpy as np
 import json
 import pandas as pd
 from ..utils import normalizeDF, deNormalizeDF
+from .BaseModel import MLModel
 
 
 class Layer:
@@ -11,7 +12,7 @@ class Layer:
         self.dl = np.zeros(_neurons.shape)
         self.weights = np.zeros((0, 1)) #placeholder for weights
 
-class NeuralNetwork:
+class NeuralNetwork(MLModel):
     # Regression Purpose : Linear Activation [0]
     #Classification : Softmax Activation [1]
     #using MSE cost fucntion
@@ -123,7 +124,7 @@ class NeuralNetwork:
             self.layers[ind].weights -= alpha*np.matmul(self.layers[ind].dl, self.layers[ind-1].neurons.T)
             self.layers[ind].biases -= alpha*self.layers[ind].dl
 
-    def train(self, X, y, alpha: np.float32, epochs: int):
+    def _train(self, X, y, alpha: np.float32, epochs: int):
         """
         Trains the Neural Network using the given data.
 
@@ -221,7 +222,7 @@ class NeuralNetwork:
             self.layers[ind].weights = np.array(d[f'W{ind}'])
             self.layers[ind].biases = np.array(d[f'B{ind}'])
     
-    def predict(self, inp: pd.DataFrame, withConfidences=False) -> np.ndarray:
+    def _predict(self, inp: pd.DataFrame, withConfidences=False) -> np.ndarray:
         """
         Returns the predicted output.
         Parameters:

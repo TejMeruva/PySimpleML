@@ -2,12 +2,13 @@ import numpy as np
 import pandas as pd
 from ..utils import normalizeNP, deNormalizeNP, euclidDist
 import json
+from .BaseModel import MLModel
 
-class KNNModel:
+class KNNModel(MLModel):
     def __init__(self, k=0):
         self.k = k
 
-    def train(self, X: pd.DataFrame, y: pd.DataFrame):
+    def _train(self, X: pd.DataFrame, y: pd.DataFrame):
         self.ycols = y.columns
         self.X, self.xmeans, self.xstds = normalizeNP(X.to_numpy())
         self.y, self.ymeans, self.ystds  = normalizeNP(y.to_numpy())
@@ -18,7 +19,7 @@ class KNNModel:
         nearInds = dists.argpartition(self.k)[:self.k]
         return deNormalizeNP(self.y[nearInds].mean(axis=0), self.ymeans, self.ystds)
     
-    def predict(self, inp: pd.DataFrame):
+    def _predict(self, inp: pd.DataFrame):
         inpNorm = normalizeNP(inp.to_numpy(), self.xmeans, self.xstds)[0]
         preds = np.apply_along_axis(self._predictOne, axis=1, arr=inpNorm)
         return pd.DataFrame(preds, columns=[f'{x}Pred' for x in self.ycols])

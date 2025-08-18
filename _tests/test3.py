@@ -22,7 +22,7 @@ q = _Question(3, 'A', data.columns)
 X = data.iloc[:, :-1]
 y = data.iloc[:, [-1]]
 tree = DecisionTree(1)
-tree.train(X, y)
+tree._train_model(X, y)
 # print(tree)
-pred = tree.predict(X)
+pred = tree._predict(X)
 print(pd.concat([pred.reset_index(drop=True), y.reset_index(drop=True)], axis=1))
