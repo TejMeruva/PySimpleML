@@ -4,8 +4,8 @@
 This package gives the user the ability to train models from data in the form of a pandas dataframe. It provides 4 models:
 - Artificial Neural Network
 - K Nearest Neighbour Model
-- Decision Tree
-- Random Forest
+- Decision Tree (w/Feature Ranking)
+- Random Forest (w/Feature Ranking)
 - AdaBoost (using Stumps)
 
 #### Background
