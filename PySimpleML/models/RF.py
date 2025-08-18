@@ -25,7 +25,9 @@ class RandomForest(MLModel):
         q = _randBestQuestion(data, self.nvar, cols, inds)
         if q is None: return Leaf(data[:, [-1]], self.task)
         info = _infoGain(data, q)
+        
         if round(info, 10) == 0: return Leaf(data[:, [-1]], self.task)
+        self.featureImportances[q.serInd] += info
         inds = inds[~(inds == q.serInd)]
         # print(inds)
         trueData, falseData = _split(data, q)
@@ -35,6 +37,8 @@ class RandomForest(MLModel):
     
     def _train(self, X:pd.DataFrame, y:pd.DataFrame):
         cols = np.array(X.columns)
+        self.cols = cols
+        self.featureImportances = np.full_like(self.cols, 0, dtype=np.float64)
         X = X.to_numpy()
         y = y.to_numpy()
         tdata = np.hstack([X, y])
@@ -44,6 +48,7 @@ class RandomForest(MLModel):
             tree = DecisionTree(rootNode=self._buildTree(bdata, cols))
             trees.append(tree) 
         self.trees = trees
+        self.featureImportances = self.featureImportances/self.featureImportances.sum()
 
     def _predict(self, X:pd.DataFrame):
         
@@ -53,6 +58,9 @@ class RandomForest(MLModel):
                 return None
             case 1:
                 return(ops.mode(axis=1)[0])
+            
+    def getFeatureImportances(self):
+        return pd.Series(self.featureImportances, index=self.cols)
 
 
         

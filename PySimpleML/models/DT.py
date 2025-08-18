@@ -121,12 +121,16 @@ class DecisionTree(MLModel):
         # print(tdata)
         # print(tdata)
         cols = np.array(X.columns)
+        self.cols = cols
+        self.featureImportances = np.full_like(self.cols, 0, dtype=np.float64)
         self.rootNode = self._buildTree(tdata, self.task, cols)
+        self.featureImportances = self.featureImportances/self.featureImportances.sum()
 
     def _buildTree(self, data:np.ndarray, task, cols:np.ndarray):
         q = _bestQuestion(data[:, :-1], cols)
         info = _infoGain(data, q)
         if info == 0: return Leaf(data[:, -1], task)
+        self.featureImportances[q.serInd] += info
         trueData, falseData = _split(data, q)
         # print(q)
         # print('gay')
@@ -134,6 +138,9 @@ class DecisionTree(MLModel):
         trueBranch = self._buildTree(trueData, task, cols)
         falseBranch = self._buildTree(falseData, task, cols)
         return DecisionNode(q, trueBranch, falseBranch)
+    
+    def getFeatureImportances(self):
+        return pd.Series(self.featureImportances, index=self.cols)
     
     def predictNP(self, inpNP:np.ndarray):
         inds = np.arange(0, inpNP.shape[0], 1).reshape(-1, 1)
