@@ -31,10 +31,18 @@ class _Question:
 #         score -= (vals.count(val)/len(vals))**2
 #     return score
 
-def _giniScore(y: np.ndarray):
-    _, counts = np.unique(y, return_counts=True)
-    probs = counts / counts.sum()
-    return 1 - np.sum(probs ** 2)
+def _giniScore(y: np.ndarray, weights:np.ndarray = None):
+    if weights is None: 
+        weights = np.full_like(y, 1.0, dtype=np.float64)
+        weights = weights/weights.shape[0] #equal weights
+    score = 1
+    labels, counts = np.unique(y, return_counts=True)
+    for label in labels:
+        sigw = weights[y==label].sum()
+        p = sigw/weights.sum()
+        score -= p**2
+    return score
+
 
 def _split(data:np.ndarray, question:_Question):
     ser = data[:, [question.serInd]].reshape(-1)
@@ -46,13 +54,21 @@ def _splitInds(data:np.ndarray, question:_Question):
     mask = question.test(ser)
     return mask, ~mask
 
-def _infoGain(data:np.ndarray, question:_Question):
-    score = _giniScore(data[:, [-1]])
-    trueData, falseData = _split(data, question)
-    wmean = (trueData[:, -1].size * _giniScore(trueData[:, -1]) + falseData[:, -1].size * _giniScore(falseData[:, -1]))/(trueData[:, -1].size + falseData[:, -1].size)
+def _infoGain(data:np.ndarray, question:_Question, weights: np.ndarray=None):
+    if weights is None: 
+        weights = np.full_like(data[:, [-1]], 1.0, dtype=np.float64)
+        weights = weights/weights.shape[0] #equal weights
+    score = _giniScore(data[:, [-1]], weights)
+    trueInds, falseInds = _splitInds(data, question)
+    trueData, falseData = data[trueInds, :], data[falseInds, :]
+    trueWeights, falseWeights = weights[trueInds, :], weights[falseInds, :]
+    wmean = (trueWeights.sum() * _giniScore(trueData[:, [-1]], trueWeights) + falseWeights.sum() * _giniScore(falseData[:, [-1]], falseWeights))/(falseWeights.sum() + trueWeights.sum())
     return score - wmean
 
-def _bestQuestion(data:np.ndarray, cols:np.ndarray):
+def _bestQuestion(data:np.ndarray, cols:np.ndarray, weights: np.ndarray = None):
+    if weights is None: 
+        weights = np.full_like(data[:, [-1]], 1)
+        weights = weights/weights.shape[0] #equal weights
     X = data[:, :-1]
     y = data[:, [-1]]
     bestInfo = -1
@@ -60,7 +76,7 @@ def _bestQuestion(data:np.ndarray, cols:np.ndarray):
     for colInd in range(X.shape[1]):
         for val in np.unique(X[:, colInd]).reshape(-1):
             ques = _Question(colInd, val, cols)
-            info = _infoGain(data, ques)
+            info = _infoGain(data, ques, weights)
             if info > bestInfo:
                 bestInfo  = info
                 # print(bestInfo)
